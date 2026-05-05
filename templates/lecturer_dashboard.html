@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lecturer Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #00b4d8;
+            --green: #2ed573;
+            --red: #e94560;
+            --orange: #ffa502;
+            --bg1: #0d1117;
+            --bg2: #161b22;
+            --glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #f0f6fc;
+            --muted: rgba(240,246,252,0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { font-family: 'Space Grotesk', sans-serif; background: var(--bg1); color: var(--text); min-height: 100dvh; }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky; top: 0; z-index: 200;
+            background: rgba(13,17,23,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; }
+        .navbar-icon {
+            width: 34px; height: 34px;
+            background: linear-gradient(135deg, var(--blue), #48cae4);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .navbar h1 { font-size: 15px; font-weight: 700; }
+        .navbar-right { display: flex; align-items: center; gap: 8px; }
+        .lecturer-name { font-size: 12px; color: var(--muted); display: none; }
+        @media(min-width:480px) { .lecturer-name { display: block; } }
+        .logout-btn {
+            padding: 6px 12px;
+            background: rgba(233,69,96,0.1);
+            border: 1px solid rgba(233,69,96,0.2);
+            border-radius: 8px;
+            color: var(--red);
+            text-decoration: none;
+            font-size: 12px; font-weight: 600;
+        }
+
+        /* TABS - scrollable on mobile */
+        .tabs-wrapper {
+            background: var(--bg1);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .tabs-wrapper::-webkit-scrollbar { display: none; }
+        .tabs { display: flex; padding: 0 12px; min-width: max-content; }
+        .tab {
+            padding: 12px 18px;
+            font-size: 13px; font-weight: 600;
+            color: var(--muted);
+            background: transparent; border: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+        /* CONTENT */
+        .tab-content { display: none; padding: 16px; max-width: 1100px; margin: 0 auto; padding-bottom: 80px; }
+        .tab-content.active { display: block; }
+
+        /* STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        @media(min-width:480px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 12px;
+            text-align: center;
+        }
+        .stat-card h3 { font-size: 26px; font-weight: 700; color: var(--blue); }
+        .stat-card p { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* CARD */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 14px;
+        }
+        .card-title { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* SESSION BANNER */
+        .session-banner {
+            background: rgba(46,213,115,0.08);
+            border: 1px solid rgba(46,213,115,0.2);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px; color: var(--green);
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        /* PATTERN BUTTONS */
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        @media(min-width:400px) { .pattern-grid { grid-template-columns: repeat(5, 1fr); } }
+        .pattern-btn {
+            padding: 10px 6px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 11px; font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .pattern-btn .emoji { font-size: 18px; display: block; margin-bottom: 3px; }
+        .pattern-btn.active, .pattern-btn:active {
+            border-color: var(--blue);
+            background: rgba(0,180,216,0.1);
+            color: var(--blue);
+        }
+
+        /* LOCATION */
+        .location-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .accuracy-tip {
+            font-size: 12px;
+            color: rgba(255,165,2,0.8);
+            margin-bottom: 10px;
+            display: none;
+            padding: 8px 12px;
+            background: rgba(255,165,2,0.06);
+            border-radius: 8px;
+        }
+
+        /* BUTTONS */
+        .btn {
+            width: 100%; padding: 13px;
+            border: none; border-radius: 11px;
+            font-size: 14px; font-weight: 700;
+            font-family: inherit; cursor: pointer;
+            margin-bottom: 8px;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-blue { background: linear-gradient(135deg, var(--blue), #48cae4); color: white; box-shadow: 0 4px 16px rgba(0,180,216,0.25); }
+        .btn-green { background: linear-gradient(135deg, var(--green), #26c265); color: #0d1117; box-shadow: 0 4px 16px rgba(46,213,115,0.2); }
+        .btn-red { background: linear-gradient(135deg, var(--red), #ff6b6b); color: white; }
+        .btn-sm { padding: 6px 12px; width: auto; font-size: 12px; margin: 0; border-radius: 8px; }
+        .btn-ghost { background: var(--glass); border: 1px solid var(--border); color: var(--text); }
+
+        /* ALERT */
+        .alert { padding: 11px 14px; border-radius: 10px; font-size: 13px; margin-top: 8px; display: none; text-align: center; font-weight: 600; }
+        .alert.success { background: rgba(46,213,115,0.1); color: var(--green); border: 1px solid rgba(46,213,115,0.2); }
+        .alert.error { background: rgba(233,69,96,0.1); color: var(--red); border: 1px solid rgba(233,69,96,0.2); }
+
+        /* SEARCH */
+        .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+        input[type=text], input[type=email], select {
+            flex: 1; padding: 12px 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--text); font-size: 15px;
+            font-family: inherit; outline: none;
+            -webkit-appearance: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--blue); }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+        select option { background: #161b22; }
+
+        /* STUDENT PROFILE */
+        .student-profile {
+            background: rgba(0,180,216,0.05);
+            border: 1px solid rgba(0,180,216,0.15);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .profile-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .profile-name { font-size: 16px; font-weight: 700; color: var(--blue); }
+        .profile-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+        .profile-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 8px; margin-bottom: 12px;
+        }
+        .p-stat { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 6px; text-align: center; }
+        .p-stat h4 { font-size: 20px; font-weight: 700; color: var(--blue); }
+        .p-stat p { font-size: 10px; color: var(--muted); margin-top: 2px; }
+        .progress-bar { background: rgba(255,255,255,0.08); border-radius: 8px; height: 6px; overflow: hidden; margin-bottom: 6px; }
+        .progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width 0.5s; }
+        .progress-label { font-size: 11px; color: var(--muted); }
+
+        /* BADGES */
+        .badge { padding: 3px 9px; border-radius: 16px; font-size: 10px; font-weight: 700; display: inline-block; }
+        .badge.present { background: rgba(46,213,115,0.15); color: var(--green); }
+        .badge.absent { background: rgba(233,69,96,0.15); color: var(--red); }
+        .badge.bound { background: rgba(0,180,216,0.15); color: var(--blue); }
+        .badge.unbound { background: rgba(255,165,2,0.15); color: var(--orange); }
+
+        /* FILTER BAR */
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .filter-bar input, .filter-bar select { flex: 1; min-width: 140px; margin: 0; }
+
+        /* MOBILE STUDENT CARDS */
+        .student-list { }
+        .student-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .student-info { flex: 1; min-width: 0; }
+        .student-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .student-matric { font-size: 12px; color: var(--muted); margin-top: 2px; }
+        .student-stats { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .student-actions { display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+        .mini-progress { width: 60px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+        .mini-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--green)); border-radius: 4px; }
+
+        /* DESKTOP TABLE */
+        .desktop-table-wrap { display: none; overflow-x: auto; }
+        @media(min-width:768px) {
+            .student-list { display: none; }
+            .desktop-table-wrap { display: block; }
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 11px 14px; text-align: left; font-size: 12px; }
+        th { background: rgba(255,255,255,0.03); color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+        td { border-top: 1px solid rgba(255,255,255,0.04); color: rgba(240,246,252,0.85); }
+        .td-actions { display: flex; gap: 5px; }
+
+        /* SESSION INFO BOX */
+        .session-info-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 13px;
+            line-height: 2;
+        }
+        .session-info-box strong { color: var(--text); }
+
+        /* RECORDS - mobile cards */
+        .record-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 8px;
+        }
+        .record-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .record-student { font-size: 14px; font-weight: 600; }
+        .record-date { font-size: 11px; color: var(--muted); margin-top: 2px; }
+        .record-checks { display: flex; gap: 6px; flex-wrap: wrap; }
+        .check-tag { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--muted); }
+        .desktop-records { display: none; }
+        @media(min-width:768px) {
+            .mobile-records { display: none; }
+            .desktop-records { display: block; overflow-x: auto; }
+        }
+
+        /* EMPTY */
+        .empty { text-align: center; padding: 36px 20px; color: var(--muted); font-size: 13px; }
+
+        /* GRID */
+        .two-col { display: grid; grid-template-columns: 1fr; gap: 14px; }
+        @media(min-width:640px) { .two-col { grid-template-columns: 1fr 1fr; } }
+
+        /* SESSION TABLE */
+        .session-mini-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .session-mini-table th, .session-mini-table td { padding: 8px 10px; font-size: 12px; text-align: left; }
+        .session-mini-table th { color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+        .session-mini-table td { border-top: 1px solid rgba(255,255,255,0.04); }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="navbar-brand">
+        <div class="navbar-icon">👨‍🏫</div>
+        <h1>Lecturer Portal</h1>
+    </div>
+    <div class="navbar-right">
+        <span class="lecturer-name">{{ lecturer.full_name.split()[0] }}</span>
+        <a href="/lecturer/logout" class="logout-btn">Logout</a>
+    </div>
+</div>
+
+<div class="tabs-wrapper">
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('session',this)">🎯 Session</button>
+        <button class="tab" onclick="switchTab('students',this)">👥 Students</button>
+        <button class="tab" onclick="switchTab('records',this)">📋 Records</button>
+    </div>
+</div>
+
+<!-- ── SESSION TAB ── -->
+<div class="tab-content active" id="tab-session">
+    <div class="stats-grid">
+        <div class="stat-card"><h3>{{ students|length }}</h3><p>Students</p></div>
+        <div class="stat-card"><h3>{{ attendances|selectattr('status','equalto','present')|list|length }}</h3><p>Present</p></div>
+        <div class="stat-card"><h3>{{ attendances|length }}</h3><p>Records</p></div>
+        <div class="stat-card"><h3 style="font-size:16px;padding-top:4px;">{{ lecturer.course[:8] }}</h3><p>Your Course</p></div>
+    </div>
+
+    <div class="two-col">
+        <div class="card">
+            <div class="card-title">🎯 Start Session</div>
+            <div class="session-banner" id="activeSessionBanner">✅ Session Active — Students can mark attendance</div>
+
+            <div style="margin-bottom:12px;">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Pattern for Students</div>
+                <div class="pattern-grid">
+                    <button class="pattern-btn active" onclick="selectPattern('circle',this)">
+                        <span class="emoji">⭕</span>Circle
+                    </button>
+                    <button class="pattern-btn" onclick="selectPattern('triangle',this)">
+                        <span class="emoji">🔺</span>Triangle
+                    </button>
+                    <button class="pattern-btn" onclick="selectPattern('square',this)">
+                        <span class="emoji">🟦</span>Square
+                    </button>
+                    <button class="pattern-btn" onclick="selectPattern('star',this)">
+                        <span class="emoji">⭐</span>Star
+                    </button>
+                    <button class="pattern-btn" onclick="selectPattern('zigzag',this)">
+                        <span class="emoji">〰️</span>Zigzag
+                    </button>
+                </div>
+            </div>
+
+            <div class="location-box">📍 Location: <span id="locationText">Not captured yet</span></div>
+            <div class="accuracy-tip" id="accuracyTip">⚠️ Low accuracy. Move near a window for better GPS signal.</div>
+
+            <button class="btn btn-blue" onclick="captureLocation()">📍 Capture My Location</button>
+            <button class="btn btn-green" onclick="startSession()">▶️ Start Session</button>
+            <button class="btn btn-red" onclick="stopSession()">⏹️ Stop Session</button>
+            <button class="btn btn-ghost" onclick="markAbsent()" style="margin-top:4px;">📝 Mark Absentees & Notify Parents</button>
+            <div class="alert" id="sessionAlert"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📊 Active Session Info</div>
+            <div id="sessionInfoBox">
+                <div class="empty">No active session.<br>Start one to see info here.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── STUDENTS TAB ── -->
+<div class="tab-content" id="tab-students">
+    <!-- Search -->
+    <div class="card">
+        <div class="card-title">🔍 Search by Matric Number</div>
+        <div class="search-row">
+            <input type="text" id="searchMatric" placeholder="e.g. AEF/2021/001" onkeyup="if(event.key==='Enter') searchStudent()">
+            <button class="btn btn-blue btn-sm" onclick="searchStudent()" style="padding:12px 16px;">Search</button>
+        </div>
+        <div class="alert" id="searchAlert"></div>
+
+        <div class="student-profile" id="studentProfile">
+            <div class="profile-top">
+                <div>
+                    <div class="profile-name" id="profileName"></div>
+                    <div class="profile-meta" id="profileMatric"></div>
+                    <div class="profile-meta" id="profileEmail"></div>
+                    <div class="profile-meta" id="profilePhone"></div>
+                </div>
+                <div style="text-align:right;">
+                    <span id="profileDevice" class="badge"></span>
+                    <br><br>
+                    <button class="btn btn-red btn-sm" onclick="resetDeviceByMatric()">🔄 Reset Device</button>
+                </div>
+            </div>
+            <div class="profile-stats">
+                <div class="p-stat"><h4 id="pTotal">0</h4><p>Total</p></div>
+                <div class="p-stat"><h4 id="pPresent" style="color:var(--green);">0</h4><p>Present</p></div>
+                <div class="p-stat"><h4 id="pAbsent" style="color:var(--red);">0</h4><p>Absent</p></div>
+                <div class="p-stat"><h4 id="pRate">0%</h4><p>Rate</p></div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+            <div class="progress-label" id="progressLabel"></div>
+
+            <div style="margin-top:14px;">
+                <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;font-weight:600;">📅 By Session</div>
+                <table class="session-mini-table">
+                    <thead><tr><th>Date</th><th>Course</th><th>Present</th><th>Absent</th></tr></thead>
+                    <tbody id="sessionTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Students -->
+    <div class="card">
+        <div class="card-title">👥 All Students</div>
+        <div class="filter-bar">
+            <input type="text" id="filterName" placeholder="Filter by name or matric..." onkeyup="filterStudents()">
+            <select id="filterDevice" onchange="filterStudents()">
+                <option value="">All Devices</option>
+                <option value="bound">Bound</option>
+                <option value="unbound">Unbound</option>
+            </select>
+        </div>
+
+        <!-- Mobile cards -->
+        <div class="student-list" id="studentListMobile"></div>
+
+        <!-- Desktop table -->
+        <div class="desktop-table-wrap">
+            <table>
+                <thead><tr><th>Name</th><th>Matric No</th><th>Present</th><th>Absent</th><th>Rate</th><th>Device</th><th>Actions</th></tr></thead>
+                <tbody id="allStudentsBody"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── RECORDS TAB ── -->
+<div class="tab-content" id="tab-records">
+    <div class="card">
+        <div class="card-title">📋 Records — {{ lecturer.course }}</div>
+        <div class="filter-bar">
+            <input type="text" id="filterRecord" placeholder="Search by name..." onkeyup="filterRecords()">
+            <select id="filterStatus" onchange="filterRecords()">
+                <option value="">All Status</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+            </select>
+        </div>
+
+        <!-- Mobile record cards -->
+        <div class="mobile-records" id="mobileRecords">
+            {% for a in attendances %}
+            <div class="record-card record-item" data-name="{{ a.student.full_name|lower }}" data-status="{{ a.status }}">
+                <div class="record-top">
+                    <div>
+                        <div class="record-student">{{ a.student.full_name }}</div>
+                        <div class="record-date">{{ a.timestamp.strftime('%d %b %Y, %I:%M %p') }} — {{ a.course }}</div>
+                    </div>
+                    <span class="badge {{ a.status }}">{{ a.status|upper }}</span>
+                </div>
+                <div class="record-checks">
+                    <span class="check-tag">{{ '✅' if a.location_valid else '❌' }} Location</span>
+                    <span class="check-tag">{{ '✅' if a.device_valid else '❌' }} Device</span>
+                    <span class="check-tag">{{ '✅' if a.pattern_valid else '❌' }} Pattern</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty">No records yet for this course.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Desktop table -->
+        <div class="desktop-records">
+            <table>
+                <thead><tr><th>Student</th><th>Date & Time</th><th>Course</th><th>Status</th><th>Location</th><th>Device</th><th>Pattern</th></tr></thead>
+                <tbody>
+                    {% for a in attendances %}
+                    <tr class="record-row" data-name="{{ a.student.full_name|lower }}" data-status="{{ a.status }}">
+                        <td>{{ a.student.full_name }}</td>
+                        <td>{{ a.timestamp.strftime('%d %b %Y, %I:%M %p') }}</td>
+                        <td>{{ a.course }}</td>
+                        <td><span class="badge {{ a.status }}">{{ a.status|upper }}</span></td>
+                        <td>{{ '✅' if a.location_valid else '❌' }}</td>
+                        <td>{{ '✅' if a.device_valid else '❌' }}</td>
+                        <td>{{ '✅' if a.pattern_valid else '❌' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="empty">No records yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── TABS ──
+    function switchTab(tab, btn) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        if (btn) btn.classList.add('active');
+        if (tab === 'students') loadAllStudents();
+    }
+
+    // ── SESSION ──
+    let selectedPattern = 'circle';
+    let lecturerLat = null, lecturerLng = null;
+
+    function selectPattern(pattern, btn) {
+        selectedPattern = pattern;
+        document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function captureLocation() {
+        const locText = document.getElementById('locationText');
+        const tip = document.getElementById('accuracyTip');
+        locText.textContent = '⏳ Capturing...';
+        tip.style.display = 'none';
+        navigator.geolocation.getCurrentPosition(pos => {
+            lecturerLat = pos.coords.latitude;
+            lecturerLng = pos.coords.longitude;
+            const acc = Math.round(pos.coords.accuracy);
+            locText.textContent = `✅ (${lecturerLat.toFixed(5)}, ${lecturerLng.toFixed(5)}) ±${acc}m`;
+            if (acc > 50) { tip.style.display = 'block'; showAlert('sessionAlert', `⚠️ Accuracy ±${acc}m — try near a window.`, 'error'); }
+            else showAlert('sessionAlert', `✅ Location captured! Accuracy ±${acc}m`, 'success');
+        }, (err) => {
+            locText.textContent = '❌ Failed: ' + err.message;
+            showAlert('sessionAlert', '❌ Location denied. Check browser permissions.', 'error');
+        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    }
+
+    function startSession() {
+        if (!lecturerLat || !lecturerLng) { showAlert('sessionAlert', '⚠️ Capture location first!', 'error'); return; }
+        fetch('/lecturer/set_session', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ pattern: selectedPattern, lat: lecturerLat, lng: lecturerLng })
+        }).then(r => r.json()).then(d => {
+            if (d.success) {
+                showAlert('sessionAlert', '✅ Session started! Pattern: ' + selectedPattern.toUpperCase(), 'success');
+                document.getElementById('activeSessionBanner').style.display = 'block';
+                document.getElementById('sessionInfoBox').innerHTML = `
+                    <div class="session-info-box">
+                        <div>🎨 Pattern: <strong>${selectedPattern.toUpperCase()}</strong></div>
+                        <div>📍 Lat: <strong>${lecturerLat.toFixed(5)}</strong></div>
+                        <div>📍 Lng: <strong>${lecturerLng.toFixed(5)}</strong></div>
+                        <div>📏 Radius: <strong>50 metres</strong></div>
+                        <div>⏱️ Started: <strong>${new Date().toLocaleTimeString()}</strong></div>
+                    </div>`;
+            } else showAlert('sessionAlert', '❌ Failed to start session', 'error');
+        });
+    }
+
+    function stopSession() {
+        fetch('/lecturer/set_session', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ pattern: null, lat: null, lng: null })
+        }).then(r => r.json()).then(() => {
+            showAlert('sessionAlert', '⏹️ Session stopped', 'error');
+            document.getElementById('activeSessionBanner').style.display = 'none';
+            document.getElementById('sessionInfoBox').innerHTML = '<div class="empty">No active session.</div>';
+            lecturerLat = null; lecturerLng = null;
+        });
+    }
+
+    function markAbsent() {
+        if (!confirm('Mark all students who have not marked attendance as ABSENT and notify their parents via SMS?')) return;
+        fetch('/lecturer/mark_absent', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => showAlert('sessionAlert', d.success ? '✅ ' + d.message : '❌ ' + d.message, d.success ? 'success' : 'error'));
+    }
+
+    function showAlert(id, msg, type) {
+        const a = document.getElementById(id);
+        a.textContent = msg; a.className = 'alert ' + type; a.style.display = 'block';
+        setTimeout(() => a.style.display = 'none', 4000);
+    }
+
+    // ── SEARCH STUDENT ──
+    function searchStudent() {
+        const matric = document.getElementById('searchMatric').value.trim();
+        if (!matric) return;
+        fetch('/lecturer/search_student?matric_no=' + encodeURIComponent(matric))
+        .then(r => r.json()).then(d => {
+            const alertEl = document.getElementById('searchAlert');
+            if (!d.success) {
+                alertEl.textContent = '❌ ' + d.message;
+                alertEl.className = 'alert error'; alertEl.style.display = 'block';
+                document.getElementById('studentProfile').style.display = 'none';
+                return;
+            }
+            alertEl.style.display = 'none';
+            const s = d.student, st = d.stats;
+            document.getElementById('profileName').textContent = s.name;
+            document.getElementById('profileMatric').textContent = '📋 ' + s.matric_no;
+            document.getElementById('profileEmail').textContent = '✉️ ' + s.email;
+            document.getElementById('profilePhone').textContent = '📞 ' + s.parent_phone;
+            document.getElementById('pTotal').textContent = st.total;
+            document.getElementById('pPresent').textContent = st.present;
+            document.getElementById('pAbsent').textContent = st.absent;
+            document.getElementById('pRate').textContent = st.rate + '%';
+            document.getElementById('progressFill').style.width = st.rate + '%';
+            document.getElementById('progressLabel').textContent = st.rate + '% attendance rate';
+            const db = document.getElementById('profileDevice');
+            db.textContent = s.device_bound ? '📱 Bound' : '⚠️ Unbound';
+            db.className = 'badge ' + (s.device_bound ? 'bound' : 'unbound');
+            const tbody = document.getElementById('sessionTableBody');
+            tbody.innerHTML = Object.keys(d.sessions).length === 0
+                ? '<tr><td colspan="4" class="empty">No records yet</td></tr>'
+                : Object.entries(d.sessions).map(([date, info]) =>
+                    `<tr><td>${date}</td><td>${info.course}</td>
+                     <td><span class="badge present">${info.present}</span></td>
+                     <td><span class="badge absent">${info.absent}</span></td></tr>`
+                ).join('');
+            document.getElementById('studentProfile').style.display = 'block';
+        });
+    }
+
+    function resetDeviceByMatric() {
+        const matric = document.getElementById('searchMatric').value.trim();
+        if (!confirm('Reset device for this student?')) return;
+        fetch('/lecturer/all_students').then(r=>r.json()).then(data => {
+            const st = data.students.find(s => s.matric_no === matric);
+            if (!st) return;
+            fetch('/lecturer/reset_device/' + st.id, {method:'POST'}).then(r=>r.json()).then(res => {
+                alert('✅ ' + res.message); searchStudent(); loadAllStudents();
+            });
+        });
+    }
+
+    // ── ALL STUDENTS ──
+    let allStudentsData = [];
+
+    function loadAllStudents() {
+        fetch('/lecturer/all_students').then(r=>r.json()).then(d => {
+            allStudentsData = d.students;
+            renderStudents(d.students);
+        });
+    }
+
+    function renderStudents(students) {
+        // Mobile
+        const mobileEl = document.getElementById('studentListMobile');
+        // Desktop
+        const desktopEl = document.getElementById('allStudentsBody');
+
+        if (!students || students.length === 0) {
+            mobileEl.innerHTML = '<div class="empty">No students registered yet</div>';
+            desktopEl.innerHTML = '<tr><td colspan="7" class="empty">No students registered yet</td></tr>';
+            return;
+        }
+
+        mobileEl.innerHTML = students.map(s => `
+            <div class="student-item">
+                <div class="student-info">
+                    <div class="student-name">${s.name}</div>
+                    <div class="student-matric">${s.matric_no}</div>
+                    <div class="student-stats">
+                        <span class="badge present">${s.present} present</span>
+                        <span class="badge absent">${s.absent} absent</span>
+                        <span class="badge ${s.device_bound ? 'bound' : 'unbound'}">${s.device_bound ? '📱' : '⚠️'}</span>
+                    </div>
+                    <div class="mini-progress"><div class="mini-fill" style="width:${s.rate}%"></div></div>
+                    <div style="font-size:10px;color:var(--muted);margin-top:2px;">${s.rate}%</div>
+                </div>
+                <div class="student-actions">
+                    <button class="btn btn-blue btn-sm" onclick="viewStudent('${s.matric_no}')">👁 View</button>
+                    <button class="btn btn-red btn-sm" onclick="quickReset(${s.id},'${s.name}')">🔄</button>
+                </div>
+            </div>
+        `).join('');
+
+        desktopEl.innerHTML = students.map(s => `
+            <tr>
+                <td>${s.name}</td>
+                <td>${s.matric_no}</td>
+                <td><span class="badge present">${s.present}</span></td>
+                <td><span class="badge absent">${s.absent}</span></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="mini-progress" style="width:70px;"><div class="mini-fill" style="width:${s.rate}%"></div></div>
+                        <span style="font-size:12px;">${s.rate}%</span>
+                    </div>
+                </td>
+                <td><span class="badge ${s.device_bound ? 'bound' : 'unbound'}">${s.device_bound ? '📱 Bound' : '⚠️ Unbound'}</span></td>
+                <td>
+                    <div class="td-actions">
+                        <button class="btn btn-blue btn-sm" onclick="viewStudent('${s.matric_no}')">👁 View</button>
+                        <button class="btn btn-red btn-sm" onclick="quickReset(${s.id},'${s.name}')">🔄 Reset</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterStudents() {
+        const name = document.getElementById('filterName').value.toLowerCase();
+        const device = document.getElementById('filterDevice').value;
+        const filtered = allStudentsData.filter(s => {
+            const nm = s.name.toLowerCase().includes(name) || s.matric_no.toLowerCase().includes(name);
+            const dm = device === '' || (device==='bound' && s.device_bound) || (device==='unbound' && !s.device_bound);
+            return nm && dm;
+        });
+        renderStudents(filtered);
+    }
+
+    function viewStudent(matric) {
+        switchTab('students', document.querySelectorAll('.tab')[1]);
+        document.getElementById('searchMatric').value = matric;
+        searchStudent();
+        document.getElementById('studentProfile').scrollIntoView({behavior:'smooth'});
+    }
+
+    function quickReset(id, name) {
+        if (!confirm('Reset device for ' + name + '?')) return;
+        fetch('/lecturer/reset_device/' + id, {method:'POST'}).then(r=>r.json()).then(d => {
+            alert('✅ ' + d.message); loadAllStudents();
+        });
+    }
+
+    // ── FILTER RECORDS ──
+    function filterRecords() {
+        const name = document.getElementById('filterRecord').value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        // Mobile
+        document.querySelectorAll('.record-item').forEach(row => {
+            const nm = row.dataset.name.includes(name);
+            const sm = status==='' || row.dataset.status===status;
+            row.style.display = (nm && sm) ? '' : 'none';
+        });
+        // Desktop
+        document.querySelectorAll('.record-row').forEach(row => {
+            const nm = row.dataset.name.includes(name);
+            const sm = status==='' || row.dataset.status===status;
+            row.style.display = (nm && sm) ? '' : 'none';
+        });
+    }
+</script>
+</body>
+</html>

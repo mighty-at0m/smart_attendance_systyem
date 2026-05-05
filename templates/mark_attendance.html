@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mark Attendance</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #e94560;
+            --green: #2ed573;
+            --orange: #ffa502;
+            --bg1: #0d1117;
+            --glass: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #f0f6fc;
+            --muted: rgba(240,246,252,0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg1);
+            color: var(--text);
+            min-height: 100dvh;
+        }
+        .navbar {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(13,17,23,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 { font-size: 16px; font-weight: 700; }
+        .back-btn {
+            padding: 7px 14px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .content { padding: 20px 16px 100px; max-width: 600px; margin: 0 auto; }
+
+        /* STATUS CARD */
+        .status-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .status-card h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 14px;
+        }
+        .status-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .status-label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .badge.checking { background: rgba(255,165,2,0.15); color: var(--orange); border: 1px solid rgba(255,165,2,0.2); }
+        .badge.valid { background: rgba(46,213,115,0.15); color: var(--green); border: 1px solid rgba(46,213,115,0.2); }
+        .badge.invalid { background: rgba(233,69,96,0.15); color: var(--red); border: 1px solid rgba(233,69,96,0.2); }
+
+        /* PATTERN CARD */
+        .pattern-card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        .pattern-card h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .pattern-instruction {
+            text-align: center;
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .pattern-instruction span {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+
+        /* COURSE SELECT */
+        .course-select {
+            width: 100%;
+            padding: 13px 15px;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid var(--border);
+            border-radius: 11px;
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 16px;
+            -webkit-appearance: none;
+        }
+        .course-select option { background: #161b22; }
+
+        /* CANVAS */
+        .canvas-wrapper {
+            width: 100%;
+            border: 2px dashed rgba(233,69,96,0.4);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+            overflow: hidden;
+            touch-action: none;
+        }
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        /* BUTTONS */
+        .canvas-btns { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 14px; }
+        .btn {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-clear { background: rgba(255,255,255,0.08); color: var(--text); }
+        .btn-submit {
+            background: linear-gradient(135deg, var(--red), #ff6b6b);
+            color: white;
+            box-shadow: 0 4px 16px rgba(233,69,96,0.3);
+        }
+
+        /* RESULT */
+        .result {
+            display: none;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 14px;
+        }
+        .result.success { background: rgba(46,213,115,0.12); color: var(--green); border: 1px solid rgba(46,213,115,0.2); }
+        .result.error { background: rgba(233,69,96,0.12); color: var(--red); border: 1px solid rgba(233,69,96,0.2); }
+
+        /* TIPS */
+        .tip-box {
+            background: rgba(0,180,216,0.06);
+            border: 1px solid rgba(0,180,216,0.15);
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-size: 12px;
+            color: rgba(0,180,216,0.8);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🎓 Mark Attendance</h1>
+        <a href="/dashboard" class="back-btn">← Back</a>
+    </div>
+
+    <div class="content">
+        <!-- Validation Status -->
+        <div class="status-card">
+            <h3>🔍 Validation Status</h3>
+            <div class="status-row">
+                <span class="status-label">📍 Location</span>
+                <span class="badge checking" id="location-badge">Checking...</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">📱 Device</span>
+                <span class="badge checking" id="device-badge">Checking...</span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">✏️ Pattern</span>
+                <span class="badge checking" id="pattern-badge">Pending</span>
+            </div>
+        </div>
+
+        <!-- Pattern Drawing -->
+        <div class="pattern-card">
+            <h3>✏️ Draw Your Pattern</h3>
+            <div class="pattern-instruction">
+                Draw a: <span id="patternLabel">{{ student.assigned_pattern }}</span>
+            </div>
+            <select class="course-select" id="course-select">
+                <option value="Computer Science">Computer Science</option>
+                <option value="Mathematics">Mathematics</option>
+                <option value="Physics">Physics</option>
+                <option value="English">English</option>
+                <option value="General Studies">General Studies</option>
+            </select>
+            <div class="canvas-wrapper">
+                <canvas id="patternCanvas" width="500" height="320"></canvas>
+            </div>
+            <div class="canvas-btns">
+                <button class="btn btn-clear" onclick="clearCanvas()">🗑️ Clear</button>
+                <button class="btn btn-submit" onclick="submitAttendance()">✅ Submit Attendance</button>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+
+        <div class="tip-box">
+            💡 <strong>Tips:</strong> Draw your shape clearly within the box. For circles, close the loop. For zigzag, go left and right. If rejected, clear and try again with a bigger drawing.
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('patternCanvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false, hasDrawn = false;
+    let paths = [], currentPath = [];
+
+    ctx.strokeStyle = '#e94560';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    function getPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        if (e.touches) return {
+            x: (e.touches[0].clientX - rect.left) * scaleX,
+            y: (e.touches[0].clientY - rect.top) * scaleY
+        };
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
+    canvas.addEventListener('mousedown', e => { drawing = true; currentPath = [getPos(e)]; });
+    canvas.addEventListener('mousemove', e => {
+        if (!drawing || currentPath.length < 1) return;
+        const pos = getPos(e);
+        currentPath.push(pos);
+        ctx.beginPath();
+        ctx.moveTo(currentPath[currentPath.length-2].x, currentPath[currentPath.length-2].y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        hasDrawn = true;
+    });
+    canvas.addEventListener('mouseup', () => { if(drawing) { drawing = false; paths.push([...currentPath]); }});
+    canvas.addEventListener('mouseleave', () => { if(drawing) { drawing = false; paths.push([...currentPath]); }});
+
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; currentPath = [getPos(e)]; }, {passive:false});
+    canvas.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (!drawing || currentPath.length < 1) return;
+        const pos = getPos(e);
+        currentPath.push(pos);
+        ctx.beginPath();
+        ctx.moveTo(currentPath[currentPath.length-2].x, currentPath[currentPath.length-2].y);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        hasDrawn = true;
+    }, {passive:false});
+    canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; paths.push([...currentPath]); }, {passive:false});
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        paths = []; hasDrawn = false;
+        document.getElementById('pattern-badge').className = 'badge checking';
+        document.getElementById('pattern-badge').textContent = 'Pending';
+        document.getElementById('result').style.display = 'none';
+    }
+
+    function getDeviceHash() {
+        const data = navigator.userAgent + screen.width + screen.height + navigator.language + navigator.platform;
+        let hash = 0;
+        for (let i = 0; i < data.length; i++) { hash = ((hash << 5) - hash) + data.charCodeAt(i); hash |= 0; }
+        return Math.abs(hash).toString(16);
+    }
+
+    let locationValid = false;
+    let assignedPattern = '{{ student.assigned_pattern }}';
+    let studentLat = null, studentLng = null;
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+        return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function validateDrawing(pattern) {
+        if (!hasDrawn || paths.length === 0) return false;
+        let allPoints = [];
+        paths.forEach(p => allPoints = allPoints.concat(p));
+        if (allPoints.length < 10) return false;
+        const xs = allPoints.map(p => p.x), ys = allPoints.map(p => p.y);
+        const width = Math.max(...xs) - Math.min(...xs);
+        const height = Math.max(...ys) - Math.min(...ys);
+        const aspectRatio = width / (height || 1);
+        const start = allPoints[0], end = allPoints[allPoints.length-1];
+        const closedDist = Math.sqrt((end.x-start.x)**2 + (end.y-start.y)**2);
+        const isClosed = closedDist < 80;
+        switch(pattern.toLowerCase()) {
+            case 'circle': return isClosed && aspectRatio > 0.4 && aspectRatio < 2.5 && allPoints.length > 25;
+            case 'triangle': return isClosed && allPoints.length > 12;
+            case 'square': return isClosed && aspectRatio > 0.5 && aspectRatio < 2.0;
+            case 'zigzag': return !isClosed && width > 80 && allPoints.length > 15;
+            case 'star': return isClosed && allPoints.length > 35;
+            default: return hasDrawn;
+        }
+    }
+
+    function loadSession() {
+        fetch('/get_session')
+        .then(r => r.json())
+        .then(data => {
+            const locBadge = document.getElementById('location-badge');
+            if (!data.success || !data.lat || !data.lng) {
+                locBadge.className = 'badge invalid';
+                locBadge.textContent = '❌ No Active Session';
+                document.getElementById('patternLabel').textContent = 'Waiting for lecturer...';
+                return;
+            }
+            assignedPattern = data.pattern;
+            document.getElementById('patternLabel').textContent = data.pattern;
+
+            navigator.geolocation.getCurrentPosition(pos => {
+                studentLat = pos.coords.latitude;
+                studentLng = pos.coords.longitude;
+                const dist = getDistance(pos.coords.latitude, pos.coords.longitude, data.lat, data.lng);
+                locationValid = dist <= 50;
+                locBadge.className = 'badge ' + (locationValid ? 'valid' : 'invalid');
+                locBadge.textContent = locationValid ? '✅ Within Range' : `❌ ${Math.round(dist)}m Away`;
+            }, () => {
+                locBadge.className = 'badge invalid';
+                locBadge.textContent = '❌ Location Denied';
+            }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+        });
+    }
+
+    // Device check
+    document.getElementById('device-badge').className = 'badge valid';
+    document.getElementById('device-badge').textContent = '✅ Recognized';
+
+    loadSession();
+    setInterval(loadSession, 10000);
+
+    function submitAttendance() {
+        if (!hasDrawn) { alert('Please draw your pattern first!'); return; }
+        const patternValid = validateDrawing(assignedPattern);
+        document.getElementById('pattern-badge').className = 'badge ' + (patternValid ? 'valid' : 'invalid');
+        document.getElementById('pattern-badge').textContent = patternValid ? '✅ Valid' : '❌ Invalid';
+
+        if (!patternValid) {
+            const r = document.getElementById('result');
+            r.style.display = 'block'; r.className = 'result error';
+            r.textContent = '❌ Wrong pattern. Clear and try again.';
+            return;
+        }
+
+        fetch('/mark_attendance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pattern_valid: patternValid,
+                location_valid: locationValid,
+                device_hash: getDeviceHash(),
+                course: document.getElementById('course-select').value,
+                student_lat: studentLat,
+                student_lng: studentLng
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.className = 'result ' + (data.success ? 'success' : 'error');
+            result.textContent = data.success ? '🎉 ' + data.message : '❌ ' + data.message;
+            if (data.success) setTimeout(() => window.location.href = '/dashboard', 2000);
+        });
+    }
+</script>
+</body>
+</html>
